@@ -17,9 +17,9 @@ public:
 
     DirectionalLight()
         : direction(-0.3f, -1.0f, -0.5f),
-        ambient(0.3f, 0.3f, 0.3f),
-        diffuse(0.7f, 0.7f, 0.6f),
-        specular(1.0f, 1.0f, 0.9f),
+        ambient(0.50f, 0.50f, 0.48f),
+        diffuse(0.95f, 0.92f, 0.85f),
+        specular(1.0f, 1.0f, 0.95f),
         enabled(true) {
     }
 
@@ -44,19 +44,18 @@ public:
     void setDay()
     {
         direction = glm::vec3(-0.3f, -1.0f, -0.5f);
-        ambient = glm::vec3(0.35f, 0.35f, 0.32f);
-        diffuse = glm::vec3(0.85f, 0.82f, 0.72f);
+        ambient = glm::vec3(0.52f, 0.52f, 0.48f);
+        diffuse = glm::vec3(0.98f, 0.95f, 0.88f);
         specular = glm::vec3(1.0f, 1.0f, 0.95f);
     }
 
     void setNight()
     {
         direction = glm::vec3(0.1f, -1.0f, 0.2f);
-        ambient = glm::vec3(0.06f, 0.06f, 0.12f);
-        diffuse = glm::vec3(0.12f, 0.12f, 0.20f);
-        specular = glm::vec3(0.2f, 0.2f, 0.3f);
+        ambient = glm::vec3(0.10f, 0.10f, 0.18f);
+        diffuse = glm::vec3(0.18f, 0.18f, 0.28f);
+        specular = glm::vec3(0.3f, 0.3f, 0.4f);
     }
 };
 
 #endif
-#pragma once

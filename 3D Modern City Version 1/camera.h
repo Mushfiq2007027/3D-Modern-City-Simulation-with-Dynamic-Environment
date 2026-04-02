@@ -32,7 +32,7 @@ public:
     // Construct from position + target
     Camera(glm::vec3 position = glm::vec3(0, 5, 15),
         glm::vec3 target = glm::vec3(0, 0, 0))
-        : WorldUp(0, 1, 0), Target(target), Roll(0), Zoom(45), MoveSpeed(10), RotSpeed(50)
+        : WorldUp(0, 1, 0), Target(target), Roll(0), Zoom(45), MoveSpeed(55), RotSpeed(120)
     {
         Position = position;
         // Derive initial Yaw/Pitch from the position->target direction
@@ -110,4 +110,3 @@ private:
     }
 };
 #endif
-#pragma once

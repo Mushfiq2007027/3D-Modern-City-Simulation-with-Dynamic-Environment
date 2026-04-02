@@ -1,10 +1,10 @@
 ﻿//
-//  main.cpp  –  3D Smart City Environment Simulation  (v4 – corrected scale & proportions)
+//  main.cpp  –  3D Smart City Environment Simulation  (v5 – landmarks & expanded world)
 //  CSE 4208 - Computer Graphics
 //
 //  Scale: ~1 world unit ≈ 3 m
-//  Buildings  ≈ 4× previous  |  World layout ≈ 3× wider  |  Vehicles unchanged
-//  Sun/Moon brought close enough to be visible in default camera view
+//  Eiffel Tower (Bézier legs, 108u) | Burj Khalifa (Y-shape setbacks, 276u)
+//  Cricket stadium oR=50 | World ±220 | BK:ET height ratio 2.56:1
 //
 
 #define _CRT_SECURE_NO_DEPRECATE
@@ -57,7 +57,7 @@ const float PI = 3.14159265358979f;
 const float HWY_Y = 14.0f;   // highway deck elevation
 const float HWY_HW = 9.0f;   // highway half-width in Z
 const float RIV_HW = 20.0f;   // river half-width in X
-const float SCENE_X = 150.0f;  // scene half-extent in X
+const float SCENE_X = 220.0f;  // scene half-extent in X
 const float C1Z = 65.0f;  // city-1 building centre Z
 const float C2Z = -65.0f;  // city-2 building centre Z
 
@@ -68,9 +68,9 @@ const glm::vec3 BP2(7, HWY_Y + 13.0f, 0);
 const glm::vec3 BP3(20, HWY_Y, 0);
 
 // ────────────────────────────────────────────────────────────
-//  Camera   (bird's-eye, ~38° down)
+//  Camera   (street-level, facing bridge)
 // ────────────────────────────────────────────────────────────
-Camera camera(glm::vec3(0.0f, 145.0f, 195.0f), glm::vec3(0, 0, 0));
+Camera camera(glm::vec3(30.0f, 22.0f, 8.0f), glm::vec3(-30.0f, 18.0f, 0.0f));
 
 // ────────────────────────────────────────────────────────────
 //  Lighting
@@ -220,10 +220,10 @@ void drawCube(unsigned int vao, Shader& s, glm::mat4 P,
     if (rotY != 0) m = myRotate(m, glm::radians(rotY), glm::vec3(0, 1, 0));
     m = glm::scale(m, sc);
     s.setMat4("model", m);
-    s.setVec3("material.ambient", col * 0.25f);
+    s.setVec3("material.ambient", col * 0.55f);
     s.setVec3("material.diffuse", col);
-    s.setVec3("material.specular", glm::vec3(0.3f));
-    s.setFloat("material.shininess", 32.0f);
+    s.setVec3("material.specular", glm::vec3(0.55f));
+    s.setFloat("material.shininess", 48.0f);
     s.setBool("isEmissive", false);
     s.setBool("isWater", false);
     glBindVertexArray(vao);
@@ -234,8 +234,8 @@ void drawCylinder(Shader& s, glm::mat4 P, glm::vec3 pos, float r, float h, glm::
     glm::mat4 m = glm::translate(P, pos);
     m = glm::scale(m, glm::vec3(r, h, r));
     s.setMat4("model", m);
-    s.setVec3("material.ambient", col * 0.25f); s.setVec3("material.diffuse", col);
-    s.setVec3("material.specular", glm::vec3(0.2f)); s.setFloat("material.shininess", 16);
+    s.setVec3("material.ambient", col * 0.55f); s.setVec3("material.diffuse", col);
+    s.setVec3("material.specular", glm::vec3(0.5f)); s.setFloat("material.shininess", 32);
     s.setBool("isEmissive", false); s.setBool("isWater", false);
     glBindVertexArray(cylVAO); glDrawElements(GL_TRIANGLES, cylIC, GL_UNSIGNED_INT, 0);
 }
@@ -244,8 +244,8 @@ void drawSphere(Shader& s, glm::mat4 P, glm::vec3 pos, float r, glm::vec3 col, b
     glm::mat4 m = glm::translate(P, pos);
     m = glm::scale(m, glm::vec3(r));
     s.setMat4("model", m);
-    s.setVec3("material.ambient", col * 0.3f); s.setVec3("material.diffuse", col);
-    s.setVec3("material.specular", glm::vec3(0.4f)); s.setFloat("material.shininess", 64);
+    s.setVec3("material.ambient", col * 0.55f); s.setVec3("material.diffuse", col);
+    s.setVec3("material.specular", glm::vec3(0.6f)); s.setFloat("material.shininess", 80);
     s.setBool("isEmissive", em); s.setBool("isWater", false);
     glBindVertexArray(sphVAO); glDrawElements(GL_TRIANGLES, sphIC, GL_UNSIGNED_INT, 0);
 }
@@ -255,7 +255,7 @@ void drawWindowGrid(unsigned int vao, Shader& s, glm::mat4 B, glm::vec3 bldg,
     int axis, float face, float yLo, float yHi,
     float uLo, float uHi, float yStep, float uStep)
 {
-    glm::vec3 wc(0.52f, 0.72f, 0.88f);
+    glm::vec3 wc(0.65f, 0.85f, 0.98f);
     for (float y = yLo; y < yHi; y += yStep)
         for (float u = uLo; u <= uHi + 0.01f; u += uStep) {
             glm::vec3 p = bldg;
@@ -277,15 +277,15 @@ void drawWindowGrid(unsigned int vao, Shader& s, glm::mat4 B, glm::vec3 bldg,
 // Tree: trunk + canopy sphere
 void drawTree(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p, float canopyR = 2.5f)
 {
-    drawCylinder(s, B, p, 0.3f, 5.0f, glm::vec3(0.42f, 0.26f, 0.12f));
-    drawSphere(s, B, p + glm::vec3(0, 5.0f + canopyR * 0.75f, 0), canopyR, glm::vec3(0.14f, 0.52f, 0.18f));
+    drawCylinder(s, B, p, 0.3f, 5.0f, glm::vec3(0.55f, 0.35f, 0.18f));
+    drawSphere(s, B, p + glm::vec3(0, 5.0f + canopyR * 0.75f, 0), canopyR, glm::vec3(0.22f, 0.78f, 0.28f));
 }
 
 // Street-light (tall pole + horizontal arm + lamp head)
 void drawStreetLight(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 {
-    drawCylinder(s, B, p, 0.14f, 14.0f, glm::vec3(0.30f, 0.30f, 0.30f));
-    drawCube(v, s, B, p + glm::vec3(1.5f, 14.0f, 0), glm::vec3(3.2f, 0.15f, 0.15f), glm::vec3(0.30f));
+    drawCylinder(s, B, p, 0.14f, 14.0f, glm::vec3(0.55f, 0.55f, 0.58f));
+    drawCube(v, s, B, p + glm::vec3(1.5f, 14.0f, 0), glm::vec3(3.2f, 0.15f, 0.15f), glm::vec3(0.55f));
     s.setBool("isEmissive", isNight);
     drawCube(v, s, B, p + glm::vec3(3.0f, 13.7f, 0), glm::vec3(1.4f, 0.45f, 1.4f),
         isNight ? glm::vec3(1, 0.93f, 0.65f) : glm::vec3(0.5f));
@@ -355,28 +355,23 @@ void drawVehicle(unsigned int v, Shader& s, glm::mat4 B,
     glm::vec3 body, top;
     glm::vec3 bsz, tsz, toff;
     switch (type) {
-        //  Car
-    case 0: body = glm::vec3(0.15f, 0.35f, 0.72f); top = glm::vec3(0.55f, 0.75f, 0.95f);
-        bsz = glm::vec3(2.0f, 0.70f, 1.05f); tsz = glm::vec3(1.0f, 0.55f, 0.95f); toff = glm::vec3(-0.1f, 0.60f, 0); break;
-        //  Bus
-    case 1: body = glm::vec3(0.82f, 0.6f, 0.1f);  top = glm::vec3(0.92f, 0.85f, 0.3f);
-        bsz = glm::vec3(3.8f, 1.40f, 1.20f); tsz = glm::vec3(3.5f, 1.10f, 1.10f); toff = glm::vec3(0, 1.15f, 0); break;
-        //  Truck
-    case 2: body = glm::vec3(0.5f, 0.48f, 0.48f); top = glm::vec3(0.38f, 0.35f, 0.35f);
-        bsz = glm::vec3(3.3f, 1.00f, 1.10f); tsz = glm::vec3(1.6f, 1.40f, 1.00f); toff = glm::vec3(-0.5f, 1.15f, 0); break;
-        //  Ambulance
-    case 3: body = glm::vec3(0.95f, 0.95f, 0.95f); top = glm::vec3(0.92f, 0.18f, 0.18f);
-        bsz = glm::vec3(2.8f, 1.00f, 1.10f); tsz = glm::vec3(1.5f, 0.50f, 1.00f); toff = glm::vec3(0.40f, 0.75f, 0); break;
-        //  Fire truck
-    default:body = glm::vec3(0.92f, 0.12f, 0.08f); top = glm::vec3(0.72f, 0.08f, 0.04f);
-        bsz = glm::vec3(3.5f, 1.05f, 1.15f); tsz = glm::vec3(2.2f, 0.80f, 1.05f); toff = glm::vec3(-0.35f, 0.95f, 0); break;
+    case 0: body = glm::vec3(0.18f, 0.48f, 0.92f); top = glm::vec3(0.65f, 0.85f, 0.98f);
+        bsz = glm::vec3(2.8f, 0.95f, 1.35f); tsz = glm::vec3(1.4f, 0.75f, 1.25f); toff = glm::vec3(-0.1f, 0.82f, 0); break;
+    case 1: body = glm::vec3(0.95f, 0.78f, 0.15f); top = glm::vec3(0.98f, 0.92f, 0.45f);
+        bsz = glm::vec3(5.2f, 1.90f, 1.55f); tsz = glm::vec3(4.8f, 1.50f, 1.45f); toff = glm::vec3(0, 1.55f, 0); break;
+    case 2: body = glm::vec3(0.72f, 0.70f, 0.68f); top = glm::vec3(0.55f, 0.52f, 0.50f);
+        bsz = glm::vec3(4.5f, 1.35f, 1.45f); tsz = glm::vec3(2.2f, 1.90f, 1.35f); toff = glm::vec3(-0.7f, 1.55f, 0); break;
+    case 3: body = glm::vec3(0.98f, 0.98f, 0.98f); top = glm::vec3(0.95f, 0.22f, 0.22f);
+        bsz = glm::vec3(3.8f, 1.35f, 1.45f); tsz = glm::vec3(2.0f, 0.70f, 1.35f); toff = glm::vec3(0.55f, 1.0f, 0); break;
+    default:body = glm::vec3(0.95f, 0.18f, 0.10f); top = glm::vec3(0.82f, 0.12f, 0.06f);
+        bsz = glm::vec3(4.8f, 1.40f, 1.50f); tsz = glm::vec3(3.0f, 1.10f, 1.40f); toff = glm::vec3(-0.5f, 1.28f, 0); break;
     }
 
     drawCube(v, s, vm, glm::vec3(0, bsz.y * 0.5f, 0), bsz, body);
     drawCube(v, s, vm, toff + glm::vec3(0, bsz.y * 0.5f, 0), tsz, top);
 
     // Wheels
-    glm::vec3 wc(0.1f); glm::vec3 ws(0.42f, 0.42f, 0.18f);
+    glm::vec3 wc(0.18f); glm::vec3 ws(0.50f, 0.50f, 0.22f);
     float wx = bsz.x * 0.35f, wz = bsz.z * 0.5f + 0.08f;
     drawCube(v, s, vm, glm::vec3(-wx, 0.22f, wz), ws, wc);
     drawCube(v, s, vm, glm::vec3(wx, 0.22f, wz), ws, wc);
@@ -403,8 +398,8 @@ void drawBoat(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p, int dir)
 {
     glm::mat4 bm = glm::translate(B, p);
     if (dir < 0) bm = myRotate(bm, glm::radians(180.0f), glm::vec3(0, 1, 0));
-    drawCube(v, s, bm, glm::vec3(0, 0, 0), glm::vec3(2.5f, 1.1f, 6.5f), glm::vec3(0.45f, 0.25f, 0.12f));
-    drawCube(v, s, bm, glm::vec3(0, 1.3f, 0.8f), glm::vec3(1.4f, 1.3f, 1.8f), glm::vec3(0.85f, 0.82f, 0.78f));
+    drawCube(v, s, bm, glm::vec3(0, 0, 0), glm::vec3(2.5f, 1.1f, 6.5f), glm::vec3(0.62f, 0.38f, 0.18f));
+    drawCube(v, s, bm, glm::vec3(0, 1.3f, 0.8f), glm::vec3(1.4f, 1.3f, 1.8f), glm::vec3(0.95f, 0.92f, 0.88f));
     drawCylinder(s, bm, glm::vec3(0, 1.3f, -2.2f), 0.07f, 2.2f, glm::vec3(0.35f));
     drawCube(v, s, bm, glm::vec3(0.45f, 2.8f, -2.2f), glm::vec3(0.85f, 0.55f, 0.1f), glm::vec3(0.92f, 0.2f, 0.15f));
 }
@@ -438,7 +433,7 @@ void drawCurvedFacadeBezier(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
     const int   N = 26;         // number of vertical strips
     const float sw = (halfW * 2.0f) / (N - 1) * 1.06f;  // strip width with slight overlap
 
-    glm::vec3 glass(0.38f, 0.60f, 0.84f), frame(0.28f, 0.34f, 0.52f);
+    glm::vec3 glass(0.55f, 0.78f, 0.96f), frame(0.42f, 0.50f, 0.68f);
 
     for (int i = 0; i < N; i++) {
         float t = (float)i / (N - 1);
@@ -480,7 +475,7 @@ void drawEntrance(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 {
     const float ew = 24.0f, eh = 20.0f, ed = 8.0f;
     const float ez = -17.5f - ed * 0.5f;  // entrance centre Z (relative to p)
-    glm::vec3 glass(0.40f, 0.65f, 0.86f), frame(0.26f, 0.32f, 0.50f), lite(0.92f, 0.90f, 0.78f);
+    glm::vec3 glass(0.58f, 0.80f, 0.96f), frame(0.42f, 0.50f, 0.68f), lite(0.95f, 0.93f, 0.85f);
 
     // Front glass wall
     drawCube(v, s, B, p + glm::vec3(0, eh * 0.5f, ez - ed * 0.5f + 0.25f),
@@ -654,8 +649,7 @@ void drawParkingRampRuledSurface(unsigned int v, Shader& s, glm::mat4 B, glm::ve
 // ── Master JFP function ──
 void drawJFP(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 {
-    glm::vec3 conc(0.72f, 0.72f, 0.74f);
-    // Main structural concrete body (44 × 35 × 40)
+    glm::vec3 conc(0.88f, 0.86f, 0.82f);
     drawCube(v, s, B, p + glm::vec3(0, 20, 0), glm::vec3(44, 40, 35), conc);
     // Child node functions (hierarchical model)
     drawSideWings(v, s, B, p);
@@ -682,12 +676,12 @@ void drawHotel(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
     // Front windows (-Z face)
     for (float y = 3.0f; y < 50.0f; y += 3.5f)
         for (float x = -7.0f; x <= 7.0f; x += 2.5f)
-            drawCube(v, s, B, p + glm::vec3(x, y, -10.01f), glm::vec3(1.4f, 1.8f, 0.12f), glm::vec3(0.55f, 0.70f, 0.85f));
+            drawCube(v, s, B, p + glm::vec3(x, y, -10.01f), glm::vec3(1.4f, 1.8f, 0.12f), glm::vec3(0.68f, 0.85f, 0.98f));
     // Side windows
     for (float y = 3.0f; y < 50.0f; y += 3.5f)
         for (float z = -7.0f; z <= 7.0f; z += 2.5f) {
-            drawCube(v, s, B, p + glm::vec3(10.01f, y, z), glm::vec3(0.12f, 1.8f, 1.4f), glm::vec3(0.55f, 0.70f, 0.85f));
-            drawCube(v, s, B, p + glm::vec3(-10.01f, y, z), glm::vec3(0.12f, 1.8f, 1.4f), glm::vec3(0.55f, 0.70f, 0.85f));
+            drawCube(v, s, B, p + glm::vec3(10.01f, y, z), glm::vec3(0.12f, 1.8f, 1.4f), glm::vec3(0.68f, 0.85f, 0.98f));
+            drawCube(v, s, B, p + glm::vec3(-10.01f, y, z), glm::vec3(0.12f, 1.8f, 1.4f), glm::vec3(0.68f, 0.85f, 0.98f));
         }
     // Porte-cochere
     drawCube(v, s, B, p + glm::vec3(0, 7.5f, -14.0f), glm::vec3(10, 0.35f, 6.5f), trim);
@@ -700,48 +694,43 @@ void drawHotel(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
     drawBillboard(v, s, B, p + glm::vec3(-2, 53.0f, -10.5f), glm::vec3(0.9f, 0.8f, 0.25f));
 }
 
-// ── Cricket Stadium (3-tier circular bowl, canopy ring, floodlights) ──
+// ── Cricket Stadium (massive circular bowl, canopy, floodlights) ──
 void drawCricketStadium(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 {
-    int seg = 36;
-    float oR = 18.0f, iR = 11.0f, dth = 2 * PI / seg;
-    // Green playing field
-    drawCube(v, s, B, p + glm::vec3(0, 0.12f, 0), glm::vec3(iR * 2, 0.22f, iR * 2), glm::vec3(0.22f, 0.62f, 0.18f));
-    // Pitch strip
-    drawCube(v, s, B, p + glm::vec3(0, 0.20f, 0), glm::vec3(1.2f, 0.14f, 9.0f), glm::vec3(0.72f, 0.62f, 0.42f));
-    // 3-tier stands (rendered as stand segment cubes around perimeter)
-    float tierH[] = { 0.0f,  6.0f, 12.0f };
-    float tierOR[] = { oR,    oR - 1.0f, oR - 2.0f };
+    int seg = 48;
+    float oR = 50.0f, iR = 35.0f, dth = 2 * PI / seg;
+    drawCube(v, s, B, p + glm::vec3(0, 0.12f, 0), glm::vec3(iR * 2, 0.22f, iR * 2), glm::vec3(0.35f, 0.85f, 0.28f));
+    drawCube(v, s, B, p + glm::vec3(0, 0.20f, 0), glm::vec3(2.0f, 0.14f, 14.0f), glm::vec3(0.72f, 0.62f, 0.42f));
+    float tierH[] = { 0.0f, 10.0f, 22.0f };
+    float tierOR[] = { oR, oR - 2.0f, oR - 4.0f };
+    glm::vec3 tierC[] = { glm::vec3(0.25f,0.55f,0.90f), glm::vec3(0.92f,0.72f,0.18f), glm::vec3(0.88f,0.35f,0.28f) };
     for (int t = 0; t < 3; t++) {
-        glm::vec3 tc = (t == 1) ? glm::vec3(0.68f) : glm::vec3(0.75f, 0.75f, 0.78f);
+        glm::vec3 tc = tierC[t];
         for (int i = 0; i < seg; i++) {
             float a = i * dth;
-            float rm = (tierOR[t] + iR + t * 0.8f) * 0.5f;
+            float rm = (tierOR[t] + iR + t * 1.5f) * 0.5f;
             float mx = cosf(a) * rm, mz = sinf(a) * rm;
-            drawCube(v, s, B, p + glm::vec3(mx, tierH[t] + 3.5f, mz),
-                glm::vec3(3.8f, 7.0f, (tierOR[t] - iR + 1.5f)), tc, -glm::degrees(a));
+            drawCube(v, s, B, p + glm::vec3(mx, tierH[t] + 5.0f, mz),
+                glm::vec3(7.0f, 10.0f, (tierOR[t] - iR + 2.0f)), tc, -glm::degrees(a));
         }
     }
-    // Canopy ring
     for (int i = 0; i < seg; i++) {
         float a = i * dth;
-        drawCube(v, s, B, p + glm::vec3(cosf(a) * oR, 20.0f, sinf(a) * oR),
-            glm::vec3(4.0f, 0.3f, 6.0f), glm::vec3(0.88f, 0.88f, 0.90f), -glm::degrees(a));
+        drawCube(v, s, B, p + glm::vec3(cosf(a) * oR, 34.0f, sinf(a) * oR),
+            glm::vec3(7.5f, 0.5f, 10.0f), glm::vec3(0.88f, 0.88f, 0.90f), -glm::degrees(a));
     }
-    // 4 floodlight towers
     float fp[][2] = { {1,1},{1,-1},{-1,1},{-1,-1} };
     for (auto& f : fp) {
-        glm::vec3 lp = p + glm::vec3(f[0] * oR * 1.2f, 0, f[1] * oR * 1.2f);
-        drawCylinder(s, B, lp, 0.3f, 28.0f, glm::vec3(0.35f));
+        glm::vec3 lp = p + glm::vec3(f[0] * oR * 1.15f, 0, f[1] * oR * 1.15f);
+        drawCylinder(s, B, lp, 0.5f, 50.0f, glm::vec3(0.35f));
         s.setBool("isEmissive", isNight);
-        drawCube(v, s, B, lp + glm::vec3(0, 28.8f, 0), glm::vec3(1.8f, 0.9f, 1.8f),
+        drawCube(v, s, B, lp + glm::vec3(0, 51.0f, 0), glm::vec3(3.0f, 1.5f, 3.0f),
             isNight ? glm::vec3(1, 0.95f, 0.72f) : glm::vec3(0.5f));
         s.setBool("isEmissive", false);
     }
-    // Entry gates
     for (float a : {0.0f, PI * 0.5f, PI, PI * 1.5f})
-        drawCube(v, s, B, p + glm::vec3(cosf(a) * oR, 3.5f, sinf(a) * oR),
-            glm::vec3(4.5f, 7.0f, 1.5f), glm::vec3(0.3f, 0.28f, 0.25f));
+        drawCube(v, s, B, p + glm::vec3(cosf(a) * (oR + 2), 5.0f, sinf(a) * (oR + 2)),
+            glm::vec3(8.0f, 10.0f, 3.0f), glm::vec3(0.3f, 0.28f, 0.25f));
 }
 
 // ── Apartment tower ──
@@ -754,11 +743,11 @@ void drawApartment(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p, float h,
     // Front windows (-Z face)
     for (float y = 3.0f; y < h - 1.0f; y += 3.5f)
         for (float x = -5.5f; x <= 5.5f; x += 2.2f)
-            drawCube(v, s, B, p + glm::vec3(x, y, -8.01f), glm::vec3(1.1f, 1.8f, 0.14f), glm::vec3(0.5f, 0.72f, 0.9f));
+            drawCube(v, s, B, p + glm::vec3(x, y, -8.01f), glm::vec3(1.1f, 1.8f, 0.14f), glm::vec3(0.62f, 0.82f, 0.96f));
     // Side windows (+X face)
     for (float y = 3.0f; y < h - 1.0f; y += 3.5f)
         for (float z = -5.0f; z <= 5.0f; z += 2.2f)
-            drawCube(v, s, B, p + glm::vec3(8.01f, y, z), glm::vec3(0.14f, 1.8f, 1.1f), glm::vec3(0.5f, 0.72f, 0.9f));
+            drawCube(v, s, B, p + glm::vec3(8.01f, y, z), glm::vec3(0.14f, 1.8f, 1.1f), glm::vec3(0.62f, 0.82f, 0.96f));
     // Roof water-tank + stairwell
     drawCube(v, s, B, p + glm::vec3(2.5f, h + 1.2f, 2.5f), glm::vec3(2.0f, 2.5f, 2.0f), glm::vec3(0.32f));
     drawCube(v, s, B, p + glm::vec3(-2.0f, h + 1.5f, -2.0f), glm::vec3(3.5f, 3.0f, 3.5f), tint * 0.85f);
@@ -767,7 +756,7 @@ void drawApartment(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p, float h,
 // ── Corporate Office (glass curtain-wall skyscraper) ──
 void drawCorporateOffice(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 {
-    glm::vec3 frame(0.3f, 0.42f, 0.58f), glass(0.42f, 0.62f, 0.8f);
+    glm::vec3 frame(0.50f, 0.62f, 0.78f), glass(0.60f, 0.80f, 0.96f);
     // Main tower  20 × 72 × 18
     drawCube(v, s, B, p + glm::vec3(0, 36.0f, 0), glm::vec3(20, 72, 18), frame);
     // Glass curtain bands on all 4 faces
@@ -779,7 +768,7 @@ void drawCorporateOffice(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
     }
     // Vertical mullions on front face
     for (float x = -8.0f; x <= 8.0f; x += 2.5f)
-        drawCube(v, s, B, p + glm::vec3(x, 36.0f, 9.02f), glm::vec3(0.2f, 70, 0.08f), glm::vec3(0.88f));
+        drawCube(v, s, B, p + glm::vec3(x, 36.0f, 9.02f), glm::vec3(0.2f, 70, 0.08f), glm::vec3(0.95f));
     // Ground floor lobby
     drawCube(v, s, B, p + glm::vec3(0, 3.5f, 9.2f), glm::vec3(5.5f, 7.0f, 0.3f), glm::vec3(0.32f, 0.5f, 0.68f));
     // Helipad on roof
@@ -790,7 +779,7 @@ void drawCorporateOffice(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 // ── Engineering University (E-shape, pillared portico, dome) ──
 void drawUniversity(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 {
-    glm::vec3 brick(0.62f, 0.35f, 0.25f), trim(0.88f, 0.82f, 0.72f);
+    glm::vec3 brick(0.82f, 0.52f, 0.35f), trim(0.95f, 0.90f, 0.82f);
     // Central block  40 × 28 × 24
     drawCube(v, s, B, p + glm::vec3(0, 14.0f, 0), glm::vec3(40, 28, 24), brick);
     // Left wing
@@ -808,9 +797,8 @@ void drawUniversity(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
     // Window bands on central block front face
     for (float y = 3.0f; y < 24.0f; y += 4.0f)
         for (float x = -14.0f; x <= 14.0f; x += 3.5f)
-            drawCube(v, s, B, p + glm::vec3(x, y, 12.01f), glm::vec3(1.8f, 2.2f, 0.14f), glm::vec3(0.52f, 0.68f, 0.82f));
-    // University lawn
-    drawCube(v, s, B, p + glm::vec3(0, 0.08f, 0), glm::vec3(72, 0.14f, 30), glm::vec3(0.32f, 0.68f, 0.22f));
+            drawCube(v, s, B, p + glm::vec3(x, y, 12.01f), glm::vec3(1.8f, 2.2f, 0.14f), glm::vec3(0.65f, 0.82f, 0.95f));
+    drawCube(v, s, B, p + glm::vec3(0, 0.08f, 0), glm::vec3(72, 0.14f, 30), glm::vec3(0.42f, 0.82f, 0.32f));
 }
 
 // ── Hospital (multi-wing, red cross, helipad) ──
@@ -833,11 +821,11 @@ void drawHospital(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
     // Window bands on front annex (+Z)
     for (float y = 3.5f; y < 18.5f; y += 3.5f)
         for (float x = -14.0f; x <= 14.0f; x += 2.8f)
-            drawCube(v, s, B, p + glm::vec3(x, y, 21.01f), glm::vec3(1.4f, 2.0f, 0.14f), glm::vec3(0.55f, 0.75f, 0.90f));
+            drawCube(v, s, B, p + glm::vec3(x, y, 21.01f), glm::vec3(1.4f, 2.0f, 0.14f), glm::vec3(0.68f, 0.88f, 0.98f));
     // Window bands on main tower front (+Z half)
     for (float y = 2.5f; y < 38.0f; y += 3.0f)
         for (float x = -8.0f; x <= 8.0f; x += 2.5f)
-            drawCube(v, s, B, p + glm::vec3(x, y, 10.01f), glm::vec3(1.2f, 1.8f, 0.14f), glm::vec3(0.55f, 0.75f, 0.90f));
+            drawCube(v, s, B, p + glm::vec3(x, y, 10.01f), glm::vec3(1.2f, 1.8f, 0.14f), glm::vec3(0.68f, 0.88f, 0.98f));
     // Helipad
     drawCylinder(s, B, p + glm::vec3(0, 40.08f, 0), 5.5f, 0.15f, glm::vec3(0.78f, 0.78f, 0.75f));
     drawCube(v, s, B, p + glm::vec3(0, 40.2f, 0), glm::vec3(0.7f, 0.12f, 4.0f), glm::vec3(0.95f));
@@ -850,7 +838,7 @@ void drawHospital(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 // ── Park (lawn, Bezier pathway, trees, pond, benches) ──
 void drawPark(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 {
-    drawCube(v, s, B, p + glm::vec3(0, 0.08f, 0), glm::vec3(36, 0.14f, 32), glm::vec3(0.28f, 0.65f, 0.22f));
+    drawCube(v, s, B, p + glm::vec3(0, 0.08f, 0), glm::vec3(36, 0.14f, 32), glm::vec3(0.40f, 0.85f, 0.32f));
     // Bezier curved main path
     glm::vec3 pp0 = p + glm::vec3(-16, 0.25f, -12), pp1 = p + glm::vec3(-5, 0.25f, 8),
         pp2 = p + glm::vec3(6, 0.25f, -4), pp3 = p + glm::vec3(16, 0.25f, 12);
@@ -879,36 +867,99 @@ void drawPark(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
     s.setBool("isWater", false);
 }
 
-// ── Eiffel-style Tower (tripod base, column, saucer deck, spire) ──
+// ── Eiffel Tower (inner/outer Bézier volumetric legs, Warren truss, arches, campanile, spire) ──
 void drawEiffelTower(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 {
-    glm::vec3 wh(0.96f, 0.96f, 0.94f), steel(0.62f, 0.62f, 0.65f), dkGlass(0.15f, 0.15f, 0.18f);
-    // 3 tripod legs (120° apart), each with 6 sub-segments curving inward
-    for (int i = 0; i < 3; i++) {
-        float a = glm::radians(i * 120.0f);
-        float bx = cosf(a) * 14.0f, bz = sinf(a) * 14.0f;
-        for (int sg = 0; sg < 8; sg++) {
-            float t0 = sg / 8.0f, t1 = (sg + 1) / 8.0f, tm = (t0 + t1) * 0.5f;
-            float inw = 1.0f - tm * 0.92f;
-            float cx = bx * inw, cz = bz * inw;
-            float y = t0 * 26.0f, ht = 26.0f / 8.0f;
-            float thick = 0.85f * (1.0f - tm * 0.5f);
-            drawCube(v, s, B, p + glm::vec3(cx, y + ht * 0.5f, cz), glm::vec3(thick, ht, thick), wh);
+    float S = 145.0f;
+    glm::vec3 iron(0.78f, 0.62f, 0.42f), dkI(0.68f, 0.55f, 0.38f), plat(0.88f, 0.82f, 0.72f);
+    float sX[4] = { 1,-1,-1,1 }, sZ[4] = { 1,1,-1,-1 };
+    int nS = 40;
+    glm::vec3 oP[4][41], iP[4][41];
+    for (int c = 0; c < 4; c++) {
+        glm::vec3 oA(sX[c] * 0.12f * S, 0, sZ[c] * 0.12f * S);
+        glm::vec3 oB(sX[c] * 0.10f * S, 0.20f * S, sZ[c] * 0.10f * S);
+        glm::vec3 oC(sX[c] * 0.035f * S, 0.60f * S, sZ[c] * 0.035f * S);
+        glm::vec3 oD(0, 0.90f * S, 0);
+        glm::vec3 iA(sX[c] * 0.07f * S, 0, sZ[c] * 0.07f * S);
+        glm::vec3 iB(sX[c] * 0.055f * S, 0.15f * S, sZ[c] * 0.055f * S);
+        glm::vec3 iC(sX[c] * 0.015f * S, 0.35f * S, sZ[c] * 0.015f * S);
+        glm::vec3 iD(0, 0.83f * S, 0);
+        for (int i = 0; i <= nS; i++) {
+            float t = i / (float)nS;
+            oP[c][i] = bezier3(oA, oB, oC, oD, t);
+            iP[c][i] = bezier3(iA, iB, iC, iD, t);
         }
     }
-    // Central column (tapered)
-    drawCylinder(s, B, p + glm::vec3(0, 26, 0), 2.0f, 14.0f, wh);
-    drawCylinder(s, B, p + glm::vec3(0, 40, 0), 1.5f, 5.0f, wh);
-    // Saucer / observation deck
-    drawCylinder(s, B, p + glm::vec3(0, 44, 0), 12.0f, 0.7f, wh * 0.95f);  // main disc
-    drawCylinder(s, B, p + glm::vec3(0, 44.7f, 0), 9.5f, 1.2f, wh * 0.92f); // upper ring
-    drawCylinder(s, B, p + glm::vec3(0, 43.3f, 0), 9.5f, 1.2f, wh * 0.92f); // lower ring
-    drawCylinder(s, B, p + glm::vec3(0, 44.0f, 0), 12.1f, 0.8f, dkGlass); // dark glass ring
-    // Antenna spire
-    drawCylinder(s, B, p + glm::vec3(0, 45.9f, 0), 0.38f, 16.0f, steel);
-    // Beacon
+    for (int c = 0; c < 4; c++) {
+        for (int i = 0; i < nS; i++) {
+            glm::vec3 om = (oP[c][i] + oP[c][i + 1]) * 0.5f;
+            glm::vec3 im = (iP[c][i] + iP[c][i + 1]) * 0.5f;
+            glm::vec3 mid = (om + im) * 0.5f;
+            float segH = oP[c][i + 1].y - oP[c][i].y;
+            if (segH < 0.1f) segH = 0.1f;
+            float wX = fabsf(om.x - im.x) + 0.25f;
+            float wZ = fabsf(om.z - im.z) + 0.25f;
+            drawCube(v, s, B, p + mid, glm::vec3(wX, segH, wZ), iron);
+        }
+    }
+    for (int i = 0; i <= nS; i++) {
+        float t = i / (float)nS;
+        if (t >= 0.83f) break;
+        int interval = (t < 0.17f) ? 1 : (t < 0.35f) ? 2 : 3;
+        if (i % interval != 0) continue;
+        for (int c = 0; c < 4; c++) {
+            int nc = (c + 1) % 4;
+            glm::vec3 a = oP[c][i], b = oP[nc][i];
+            glm::vec3 mid = (a + b) * 0.5f;
+            float dx = b.x - a.x, dz = b.z - a.z;
+            float dist = sqrtf(dx * dx + dz * dz);
+            if (dist < 0.3f) continue;
+            float ang = glm::degrees(atan2f(dx, dz));
+            float th = 0.25f * (1.0f - t * 0.5f);
+            drawCube(v, s, B, p + mid, glm::vec3(th, th, dist), dkI, ang);
+        }
+    }
+    for (int c = 0; c < 4; c++) {
+        int nc = (c + 1) % 4;
+        glm::vec3 L = iP[c][0], R = iP[nc][0];
+        glm::vec3 apex = (L + R) * 0.5f + glm::vec3(0, 0.12f * S, 0);
+        for (int i = 0; i < 14; i++) {
+            float t0 = i / 14.0f, t1 = (i + 1) / 14.0f;
+            glm::vec3 a0 = bezier3(L, apex, apex, R, t0);
+            glm::vec3 a1 = bezier3(L, apex, apex, R, t1);
+            glm::vec3 am = (a0 + a1) * 0.5f;
+            float dx = a1.x - a0.x, dz = a1.z - a0.z;
+            float len = sqrtf(dx * dx + dz * dz + (a1.y - a0.y) * (a1.y - a0.y));
+            if (len < 0.2f) len = 0.2f;
+            float ang = glm::degrees(atan2f(dx, dz));
+            drawCube(v, s, B, p + am, glm::vec3(0.5f, 0.5f, len), dkI, ang);
+        }
+    }
+    float pH[] = { 0.10f * S, 0.17f * S, 0.28f * S, 0.35f * S, 0.55f * S, 0.70f * S, 0.83f * S };
+    for (int pl = 0; pl < 7; pl++) {
+        float t = pH[pl] / (0.9f * S);
+        int idx = (int)(t * nS); if (idx > nS) idx = nS;
+        float w = 0;
+        for (int c = 0; c < 4; c++) {
+            float ax = fabsf(oP[c][idx].x);
+            if (ax > w) w = ax;
+        }
+        w = (w + 0.015f * S) * 2.0f;
+        drawCube(v, s, B, p + glm::vec3(0, pH[pl], 0), glm::vec3(w, 0.8f, w), plat);
+        drawCube(v, s, B, p + glm::vec3(w * 0.5f, pH[pl] + 1.2f, 0), glm::vec3(0.2f, 2.4f, w), dkI);
+        drawCube(v, s, B, p + glm::vec3(-w * 0.5f, pH[pl] + 1.2f, 0), glm::vec3(0.2f, 2.4f, w), dkI);
+        drawCube(v, s, B, p + glm::vec3(0, pH[pl] + 1.2f, w * 0.5f), glm::vec3(w, 2.4f, 0.2f), dkI);
+        drawCube(v, s, B, p + glm::vec3(0, pH[pl] + 1.2f, -w * 0.5f), glm::vec3(w, 2.4f, 0.2f), dkI);
+    }
+    drawCylinder(s, B, p + glm::vec3(0, 0.83f * S, 0), 1.8f, (0.07f) * S, iron);
+    drawSphere(s, B, p + glm::vec3(0, 0.90f * S, 0), 1.8f, iron);
+    float spH = 0.10f * S;
+    for (int i = 0; i < 6; i++) {
+        float r = 0.4f * (1.0f - (float)i / 6 * 0.88f);
+        drawCylinder(s, B, p + glm::vec3(0, 0.90f * S + i * spH / 6, 0), r, spH / 6, iron);
+    }
     s.setBool("isEmissive", true);
-    drawSphere(s, B, p + glm::vec3(0, 62.5f, 0), 0.65f, glm::vec3(1, 0.92f, 0.5f), true);
+    drawSphere(s, B, p + glm::vec3(0, S + 1.0f, 0), 0.8f, glm::vec3(1, 0.97f, 0.65f), true);
     s.setBool("isEmissive", false);
 }
 
@@ -916,10 +967,10 @@ void drawEiffelTower(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 void drawGarden(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 {
     // 4 lawn quadrants
-    drawCube(v, s, B, p + glm::vec3(-7, 0.1f, -7), glm::vec3(12, 0.14f, 12), glm::vec3(0.32f, 0.72f, 0.22f));
-    drawCube(v, s, B, p + glm::vec3(7, 0.1f, -7), glm::vec3(12, 0.14f, 12), glm::vec3(0.32f, 0.72f, 0.22f));
-    drawCube(v, s, B, p + glm::vec3(-7, 0.1f, 7), glm::vec3(12, 0.14f, 12), glm::vec3(0.32f, 0.72f, 0.22f));
-    drawCube(v, s, B, p + glm::vec3(7, 0.1f, 7), glm::vec3(12, 0.14f, 12), glm::vec3(0.32f, 0.72f, 0.22f));
+    drawCube(v, s, B, p + glm::vec3(-7, 0.1f, -7), glm::vec3(12, 0.14f, 12), glm::vec3(0.42f, 0.85f, 0.32f));
+    drawCube(v, s, B, p + glm::vec3(7, 0.1f, -7), glm::vec3(12, 0.14f, 12), glm::vec3(0.42f, 0.85f, 0.32f));
+    drawCube(v, s, B, p + glm::vec3(-7, 0.1f, 7), glm::vec3(12, 0.14f, 12), glm::vec3(0.42f, 0.85f, 0.32f));
+    drawCube(v, s, B, p + glm::vec3(7, 0.1f, 7), glm::vec3(12, 0.14f, 12), glm::vec3(0.42f, 0.85f, 0.32f));
     // X-pattern diagonal paths
     for (int i = -7; i <= 7; i++) {
         float t = i * 1.8f;
@@ -964,6 +1015,49 @@ void drawGarden(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
     }
 }
 
+// ── Burj Khalifa (Y-shaped tripartite floor, spiraling setbacks, spire) ──
+void drawBurjKhalifa(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
+{
+    float totalH = 276.0f;
+    float hubR = 5.0f, wingLen = 14.0f, wingW = 4.5f;
+    int nT = 30;
+    float bodyH = totalH - 50.0f;
+    float tH = bodyH / nT;
+    glm::vec3 glass(0.78f, 0.88f, 0.98f), frame(0.65f, 0.68f, 0.75f);
+    glm::vec3 spire(0.85f, 0.87f, 0.92f);
+    float wA[3] = { 0.0f, 120.0f, 240.0f };
+    float wL[3] = { wingLen, wingLen, wingLen };
+    float curY = 0;
+    for (int ti = 0; ti < nT; ti++) {
+        float prog = (float)ti / nT;
+        float tap = 1.0f - prog * 0.82f;
+        if (ti > 3 && ti % 2 == 0) wL[(ti / 2) % 3] *= 0.85f;
+        float cR = hubR * tap;
+        drawCylinder(s, B, p + glm::vec3(0, curY, 0), cR, tH, frame);
+        for (int w = 0; w < 3; w++) {
+            float wl = wL[w] * tap, ww = wingW * tap;
+            if (wl < 1.0f) continue;
+            float a = glm::radians(wA[w]);
+            float cx = cosf(a) * (cR + wl * 0.5f), cz = sinf(a) * (cR + wl * 0.5f);
+            drawCube(v, s, B, p + glm::vec3(cx, curY + tH * 0.5f, cz),
+                glm::vec3(wl, tH, ww), glass, -wA[w]);
+            float tx = cosf(a) * (cR + wl), tz = sinf(a) * (cR + wl);
+            drawCylinder(s, B, p + glm::vec3(tx, curY, tz), ww * 0.5f, tH, glass);
+        }
+        drawCylinder(s, B, p + glm::vec3(0, curY + tH, 0), cR * 1.1f, 0.3f, frame);
+        curY += tH;
+    }
+    float sR[] = { 3.5f,2.5f,1.5f,0.8f,0.3f };
+    float sH[] = { 12.0f,10.0f,10.0f,9.0f,9.0f };
+    for (int i = 0; i < 5; i++) {
+        drawCylinder(s, B, p + glm::vec3(0, curY, 0), sR[i], sH[i], spire);
+        curY += sH[i];
+    }
+    s.setBool("isEmissive", true);
+    drawSphere(s, B, p + glm::vec3(0, curY + 0.5f, 0), 0.7f, glm::vec3(1, 0.9f, 0.4f), true);
+    s.setBool("isEmissive", false);
+}
+
 // ════════════════════════════════════════════════════════════
 //  INFRASTRUCTURE
 // ════════════════════════════════════════════════════════════
@@ -971,27 +1065,22 @@ void drawGarden(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 // ── Ground (concrete city + only grass in correct zones) ──
 void drawGround(unsigned int v, Shader& s, glm::mat4 B)
 {
-    glm::vec3 conc(0.72f, 0.70f, 0.67f), grass(0.38f, 0.68f, 0.28f);
-    // City 1 concrete slab
-    drawCube(v, s, B, glm::vec3(0, -0.5f, 65), glm::vec3(310, 1.0f, 58), conc);
-    // City 2 concrete slab
-    drawCube(v, s, B, glm::vec3(0, -0.5f, -65), glm::vec3(310, 1.0f, 58), conc);
-    // Highway corridor ground
-    drawCube(v, s, B, glm::vec3(0, -0.5f, 0), glm::vec3(310, 1.0f, 22), conc * 0.90f);
-    // Grass strips along highway edges (city side)
-    drawCube(v, s, B, glm::vec3(0, 0.1f, 12), glm::vec3(310, 0.15f, 4), grass);
-    drawCube(v, s, B, glm::vec3(0, 0.1f, -12), glm::vec3(310, 0.15f, 4), grass);
-    // Grass strips along river banks
-    drawCube(v, s, B, glm::vec3(-(RIV_HW + 2.5f), 0.1f, 0), glm::vec3(4, 0.15f, 200), grass);
-    drawCube(v, s, B, glm::vec3((RIV_HW + 2.5f), 0.1f, 0), glm::vec3(4, 0.15f, 200), grass);
+    glm::vec3 conc(0.88f, 0.86f, 0.80f), grass(0.48f, 0.88f, 0.38f);
+    drawCube(v, s, B, glm::vec3(0, -0.5f, 65), glm::vec3(450, 1.0f, 58), conc);
+    drawCube(v, s, B, glm::vec3(0, -0.5f, -65), glm::vec3(450, 1.0f, 58), conc);
+    drawCube(v, s, B, glm::vec3(0, -0.5f, 0), glm::vec3(450, 1.0f, 22), conc * 0.92f);
+    drawCube(v, s, B, glm::vec3(0, 0.1f, 12), glm::vec3(450, 0.15f, 4), grass);
+    drawCube(v, s, B, glm::vec3(0, 0.1f, -12), glm::vec3(450, 0.15f, 4), grass);
+    drawCube(v, s, B, glm::vec3(-(RIV_HW + 2.5f), 0.1f, 0), glm::vec3(4, 0.15f, 300), grass);
+    drawCube(v, s, B, glm::vec3((RIV_HW + 2.5f), 0.1f, 0), glm::vec3(4, 0.15f, 300), grass);
 }
 
 // ── Elevated Highway (deck + barriers + median + markings + pillars + connecting roads) ──
 void drawHighway(unsigned int v, Shader& s, glm::mat4 B)
 {
-    glm::vec3 deck(0.32f, 0.32f, 0.32f), barrier(0.78f, 0.78f, 0.76f);
-    glm::vec3 median(0.72f, 0.72f, 0.70f), mark(0.95f, 0.95f, 0.95f);
-    glm::vec3 pillar(0.65f, 0.65f, 0.62f), road(0.22f, 0.22f, 0.22f);
+    glm::vec3 deck(0.52f, 0.52f, 0.55f), barrier(0.92f, 0.92f, 0.90f);
+    glm::vec3 median(0.82f, 0.82f, 0.80f), mark(0.98f, 0.98f, 0.96f);
+    glm::vec3 pillar(0.78f, 0.76f, 0.72f), road(0.45f, 0.45f, 0.48f);
 
     float leftCx = -(SCENE_X + RIV_HW) * 0.5f;
     float rightCx = (SCENE_X + RIV_HW) * 0.5f;
@@ -1026,7 +1115,7 @@ void drawHighway(unsigned int v, Shader& s, glm::mat4 B)
     }
 
     // Connecting roads (ground level, along Z, under/beside highway)
-    float connX[] = { -112,-70,-30, 30, 70, 112 };
+    float connX[] = { -170,-110,-45, 55, 120, 180 };
     for (float cx : connX) {
         drawCube(v, s, B, glm::vec3(cx, 0.08f, 36), glm::vec3(5.5f, 0.35f, 52), road);
         drawCube(v, s, B, glm::vec3(cx, 0.08f, -36), glm::vec3(5.5f, 0.35f, 52), road);
@@ -1039,8 +1128,8 @@ void drawHighway(unsigned int v, Shader& s, glm::mat4 B)
 // ── Bridge: Bezier arch deck + tied arches + suspender cables + pillars ──
 void drawBridge(unsigned int v, Shader& s, glm::mat4 B)
 {
-    glm::vec3 dc(0.55f, 0.55f, 0.58f), arch(0.96f, 0.96f, 0.94f);
-    glm::vec3 cable(0.62f, 0.62f, 0.65f), rail(0.72f, 0.18f, 0.12f), mark(1, 0.9f, 0.15f);
+    glm::vec3 dc(0.72f, 0.72f, 0.75f), arch(0.98f, 0.98f, 0.96f);
+    glm::vec3 cable(0.75f, 0.75f, 0.78f), rail(0.85f, 0.25f, 0.15f), mark(1, 0.95f, 0.25f);
 
     // ─ Bridge deck via Bezier (N=48 segments) ─
     int N = 48;
@@ -1126,19 +1215,19 @@ void drawRiver(unsigned int v, Shader& s, glm::mat4 B)
 {
     s.setBool("isWater", true); s.setFloat("time", gTime);
     glm::mat4 m = glm::translate(B, glm::vec3(0, -0.35f, 0));
-    m = glm::scale(m, glm::vec3(RIV_HW * 2, 0.5f, 180));
+    m = glm::scale(m, glm::vec3(RIV_HW * 2, 0.5f, 300));
     s.setMat4("model", m);
-    s.setVec3("material.ambient", glm::vec3(0.05f, 0.15f, 0.35f));
-    s.setVec3("material.diffuse", glm::vec3(0.1f, 0.35f, 0.65f));
-    s.setVec3("material.specular", glm::vec3(0.6f));
+    s.setVec3("material.ambient", glm::vec3(0.08f, 0.25f, 0.48f));
+    s.setVec3("material.diffuse", glm::vec3(0.15f, 0.48f, 0.82f));
+    s.setVec3("material.specular", glm::vec3(0.75f));
     s.setFloat("material.shininess", 128);
     s.setBool("isEmissive", false);
     glBindVertexArray(v); glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     s.setBool("isWater", false);
     // River bank retaining walls
     glm::vec3 rw(0.58f, 0.55f, 0.5f);
-    drawCube(v, s, B, glm::vec3(-RIV_HW, -0.1f, 0), glm::vec3(0.7f, 0.7f, 180), rw);
-    drawCube(v, s, B, glm::vec3(RIV_HW, -0.1f, 0), glm::vec3(0.7f, 0.7f, 180), rw);
+    drawCube(v, s, B, glm::vec3(-RIV_HW, -0.1f, 0), glm::vec3(0.7f, 0.7f, 300), rw);
+    drawCube(v, s, B, glm::vec3(RIV_HW, -0.1f, 0), glm::vec3(0.7f, 0.7f, 300), rw);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1146,15 +1235,14 @@ void drawRiver(unsigned int v, Shader& s, glm::mat4 B)
 // ════════════════════════════════════════════════════════════
 void initVehicles()
 {
-    // 12 vehicles per lane, spread across ±SCENE_X
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 20; i++) {
         Vehicle veh; veh.type = i % 5; veh.lane = 0; veh.dir = 1;
-        veh.speed = 10.0f + (i % 3) * 2.0f; veh.x = -130.0f + i * 22.0f;
+        veh.speed = 18.0f + (i % 4) * 3.0f; veh.x = -210.0f + i * 22.0f;
         vehicles.push_back(veh);
     }
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 20; i++) {
         Vehicle veh; veh.type = (i + 2) % 5; veh.lane = 1; veh.dir = -1;
-        veh.speed = 9.0f + (i % 3) * 1.8f; veh.x = 130.0f - i * 22.0f;
+        veh.speed = 17.0f + (i % 4) * 2.8f; veh.x = 210.0f - i * 22.0f;
         vehicles.push_back(veh);
     }
     // 6 boats on river
@@ -1168,7 +1256,7 @@ void initVehicles()
 void updateVehicles(float dt)
 {
     trafficGreen = fmodf(gTime, 8) < 4;
-    float stopLines[] = { -112,-70,-30,30,70,112 };
+    float stopLines[] = { -170,-110,-45,55,120,180 };
     for (auto& veh : vehicles) {
         float nx = veh.x + veh.dir * veh.speed * dt;
         // Slow down approaching bridge (river zone)
@@ -1187,7 +1275,7 @@ void updateVehicles(float dt)
     }
     for (auto& b : boats) {
         b.z += b.dir * b.speed * dt;
-        if (b.z > 110) b.z = -110; if (b.z < -110) b.z = 110;
+        if (b.z > 160) b.z = -160; if (b.z < -160) b.z = 160;
     }
 }
 
@@ -1197,15 +1285,15 @@ void updateVehicles(float dt)
 void setupPointLights()
 {
     float pos[][3] = {
-        {-110,HWY_Y + 15, 10}, { 110,HWY_Y + 15, 10},
+        {-170,HWY_Y + 15, 10}, { 170,HWY_Y + 15, 10},
         { -80,HWY_Y + 15, 10}, {  80,HWY_Y + 15, 10},
-        {-110,HWY_Y + 15,-10}, { 110,HWY_Y + 15,-10},
+        {-170,HWY_Y + 15,-10}, { 170,HWY_Y + 15,-10},
         { -80,HWY_Y + 15,-10}, {  80,HWY_Y + 15,-10}
     };
     for (int i = 0; i < 8; i++)
         pointLights[i] = PointLight(pos[i][0], pos[i][1], pos[i][2],
-            0.05f, 0.05f, 0.04f, 0.6f, 0.55f, 0.4f, 0.8f, 0.8f, 0.7f,
-            1, 0.014f, 0.002f, i + 1);
+            0.10f, 0.10f, 0.08f, 0.85f, 0.80f, 0.65f, 0.95f, 0.95f, 0.85f,
+            1, 0.012f, 0.0015f, i + 1);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1233,56 +1321,70 @@ void renderScene(unsigned int vao, Shader& sh, glm::mat4 proj, glm::mat4 view, i
     drawRiver(vao, sh, B);
     drawBridge(vao, sh, B);
 
-    // Toll booths at both ends of bridge
-    drawTollBooth(vao, sh, B, glm::vec3(-25, 0, 0));
-    drawTollBooth(vao, sh, B, glm::vec3(25, 0, 0));
+    // (toll booths removed)
 
-    // ─ City 1  (Z > 0) – safe inter-building gaps ─
-    // JFP right edge ≈ X=-90 | Hotel left edge ≈ X=-80 → 10-unit gap
-    // Hotel right edge ≈ X=-60 | Stadium left edge ≈ X=-48 → 12-unit gap
-    drawJFP(vao, sh, B, glm::vec3(-112, 0, C1Z));
-    drawHotel(vao, sh, B, glm::vec3(-70, 0, C1Z));
-    drawCricketStadium(vao, sh, B, glm::vec3(-30, 0, C1Z + 8));
-    drawApartment(vao, sh, B, glm::vec3(46, 0, C1Z), 38, glm::vec3(0.72f, 0.62f, 0.52f));
-    drawApartment(vao, sh, B, glm::vec3(82, 0, C1Z), 50, glm::vec3(0.65f, 0.60f, 0.55f));
-    drawApartment(vao, sh, B, glm::vec3(116, 0, C1Z), 30, glm::vec3(0.70f, 0.58f, 0.50f));
+    // ─ City 1  (Z > 0) ─
+    drawBurjKhalifa(vao, sh, B, glm::vec3(-180, 0, C1Z));
+    drawJFP(vao, sh, B, glm::vec3(-120, 0, C1Z));
+    drawHotel(vao, sh, B, glm::vec3(-55, 0, C1Z));
+    drawCricketStadium(vao, sh, B, glm::vec3(80, 0, C1Z + 5));
+    drawApartment(vao, sh, B, glm::vec3(165, 0, C1Z), 42, glm::vec3(0.95f, 0.88f, 0.75f));
+    drawApartment(vao, sh, B, glm::vec3(205, 0, C1Z), 55, glm::vec3(0.88f, 0.85f, 0.80f));
 
-    // ─ City 2  (Z < 0) – safe inter-building gaps ─
-    // Corp right edge ≈ X=-105 | Uni left wing ≈ X=-93 → 12-unit gap
-    // Uni right wing ≈ X=-43   | Hospital left ≈ X=-37 → 6-unit gap
-    drawCorporateOffice(vao, sh, B, glm::vec3(-115, 0, C2Z));
-    drawUniversity(vao, sh, B, glm::vec3(-68, 0, C2Z));
-    drawHospital(vao, sh, B, glm::vec3(-22, 0, C2Z));
-    drawPark(vao, sh, B, glm::vec3(46, 0, C2Z));
-    drawEiffelTower(vao, sh, B, glm::vec3(82, 0, C2Z));
-    drawGarden(vao, sh, B, glm::vec3(116, 0, C2Z));
+    // ─ City 2  (Z < 0) ─
+    drawCorporateOffice(vao, sh, B, glm::vec3(-170, 0, C2Z));
+    drawUniversity(vao, sh, B, glm::vec3(-110, 0, C2Z));
+    drawHospital(vao, sh, B, glm::vec3(-45, 0, C2Z));
+    drawPark(vao, sh, B, glm::vec3(55, 0, C2Z));
+    drawEiffelTower(vao, sh, B, glm::vec3(120, 0, C2Z));
+    drawGarden(vao, sh, B, glm::vec3(180, 0, C2Z));
+
+    // ─ Secondary row – near highway for density (Z=38, positive side) ─
+    drawApartment(vao, sh, B, glm::vec3(-200, 0, 38), 22, glm::vec3(0.92f, 0.85f, 0.72f));
+    drawApartment(vao, sh, B, glm::vec3(-165, 0, 38), 28, glm::vec3(0.90f, 0.82f, 0.68f));
+    drawApartment(vao, sh, B, glm::vec3(-115, 0, 38), 34, glm::vec3(0.82f, 0.88f, 0.95f));
+    drawApartment(vao, sh, B, glm::vec3(-65, 0, 38), 24, glm::vec3(0.95f, 0.90f, 0.80f));
+    drawApartment(vao, sh, B, glm::vec3(-30, 0, 38), 20, glm::vec3(0.88f, 0.78f, 0.92f));
+    drawApartment(vao, sh, B, glm::vec3(165, 0, 38), 30, glm::vec3(0.92f, 0.88f, 0.78f));
+    drawApartment(vao, sh, B, glm::vec3(200, 0, 38), 26, glm::vec3(0.85f, 0.92f, 0.88f));
+
+    // ─ Secondary row (Z=-38, negative side) ─
+    drawApartment(vao, sh, B, glm::vec3(-200, 0, -38), 26, glm::vec3(0.90f, 0.85f, 0.78f));
+    drawApartment(vao, sh, B, glm::vec3(-165, 0, -38), 30, glm::vec3(0.88f, 0.82f, 0.75f));
+    drawApartment(vao, sh, B, glm::vec3(-115, 0, -38), 24, glm::vec3(0.85f, 0.92f, 0.95f));
+    drawApartment(vao, sh, B, glm::vec3(-65, 0, -38), 36, glm::vec3(0.95f, 0.88f, 0.78f));
+    drawApartment(vao, sh, B, glm::vec3(-30, 0, -38), 22, glm::vec3(0.82f, 0.80f, 0.92f));
+    drawApartment(vao, sh, B, glm::vec3(50, 0, -38), 28, glm::vec3(0.88f, 0.85f, 0.95f));
+    drawApartment(vao, sh, B, glm::vec3(100, 0, -38), 24, glm::vec3(0.95f, 0.92f, 0.85f));
+    drawApartment(vao, sh, B, glm::vec3(165, 0, -38), 32, glm::vec3(0.90f, 0.95f, 0.88f));
+    drawApartment(vao, sh, B, glm::vec3(200, 0, -38), 28, glm::vec3(0.85f, 0.88f, 0.82f));
 
     // ─ Trees on highway deck edges ─
-    for (float x = -140; x <= 140; x += 12.0f) {
+    for (float x = -210; x <= 210; x += 12.0f) {
         if (x > -(RIV_HW + 4) && x < (RIV_HW + 4)) continue;
         drawTree(vao, sh, B, glm::vec3(x, HWY_Y, 10.5f), 1.8f);
         drawTree(vao, sh, B, glm::vec3(x, HWY_Y, -10.5f), 1.8f);
     }
 
     // ─ Street lights on highway deck ─
-    for (float x = -140; x <= 140; x += 22.0f) {
+    for (float x = -210; x <= 210; x += 22.0f) {
         if (x > -(RIV_HW + 5) && x < (RIV_HW + 5)) continue;
         drawStreetLight(vao, sh, B, glm::vec3(x, HWY_Y, 11.0f));
         drawStreetLight(vao, sh, B, glm::vec3(x, HWY_Y, -11.0f));
     }
 
     // ─ Traffic lights at connecting road intersections ─
-    float tlX[] = { -112,-70,-30,30,70,112 };
+    float tlX[] = { -170,-110,-45,55,120,180 };
     for (float tx : tlX) {
         drawTrafficLight(vao, sh, B, glm::vec3(tx + 3, HWY_Y, 7.5f));
         drawTrafficLight(vao, sh, B, glm::vec3(tx + 3, HWY_Y, -7.5f));
     }
 
     // ─ City signboards at highway entry points ─
-    drawSignboard(vao, sh, B, glm::vec3(-135, HWY_Y, 11), glm::vec3(0.2f, 0.5f, 0.8f));
-    drawSignboard(vao, sh, B, glm::vec3(135, HWY_Y, 11), glm::vec3(0.8f, 0.5f, 0.2f));
-    drawSignboard(vao, sh, B, glm::vec3(-135, HWY_Y, -11), glm::vec3(0.5f, 0.2f, 0.6f));
-    drawSignboard(vao, sh, B, glm::vec3(135, HWY_Y, -11), glm::vec3(0.3f, 0.6f, 0.3f));
+    drawSignboard(vao, sh, B, glm::vec3(-200, HWY_Y, 11), glm::vec3(0.2f, 0.5f, 0.8f));
+    drawSignboard(vao, sh, B, glm::vec3(200, HWY_Y, 11), glm::vec3(0.8f, 0.5f, 0.2f));
+    drawSignboard(vao, sh, B, glm::vec3(-200, HWY_Y, -11), glm::vec3(0.5f, 0.2f, 0.6f));
+    drawSignboard(vao, sh, B, glm::vec3(200, HWY_Y, -11), glm::vec3(0.3f, 0.6f, 0.3f));
 
     // ─ Vehicles on highway ─
     for (auto& veh : vehicles) {
@@ -1295,12 +1397,29 @@ void renderScene(unsigned int vao, Shader& sh, glm::mat4 proj, glm::mat4 view, i
     for (auto& b : boats)
         drawBoat(vao, sh, B, glm::vec3(b.xOff, -0.12f, b.z), b.dir);
 
-    // ─ Sun / Moon  (positioned to be visible in default camera view) ─
+    // ─ Sun / Moon  (visible from bridge view, above the scene) ─
     sh.setBool("isEmissive", true);
     if (!isNight)
-        drawSphere(sh, B, glm::vec3(120, 130, -120), 22.0f, glm::vec3(1, 0.95f, 0.40f), true);
+        drawSphere(sh, B, glm::vec3(-20, 105, 35), 18.0f, glm::vec3(1.0f, 0.97f, 0.55f), true);
     else
-        drawSphere(sh, B, glm::vec3(-100, 110, 110), 16.0f, glm::vec3(0.85f, 0.88f, 0.95f), true);
+        drawSphere(sh, B, glm::vec3(15, 95, -30), 14.0f, glm::vec3(0.90f, 0.92f, 0.98f), true);
+    sh.setBool("isEmissive", false);
+
+    // ─ Clouds (white, soft, scattered across sky) ─
+    sh.setBool("isEmissive", true);
+    glm::vec3 cld(0.97f, 0.97f, 0.99f);
+    drawSphere(sh, B, glm::vec3(-60, 88, 20), 9.0f, cld, true);
+    drawSphere(sh, B, glm::vec3(-52, 86, 22), 7.5f, cld, true);
+    drawSphere(sh, B, glm::vec3(-68, 87, 18), 7.0f, cld, true);
+    drawSphere(sh, B, glm::vec3(40, 92, -15), 10.0f, cld, true);
+    drawSphere(sh, B, glm::vec3(50, 90, -12), 8.0f, cld, true);
+    drawSphere(sh, B, glm::vec3(32, 91, -18), 7.0f, cld, true);
+    drawSphere(sh, B, glm::vec3(-10, 95, 50), 8.5f, cld, true);
+    drawSphere(sh, B, glm::vec3(-2, 93, 52), 7.0f, cld, true);
+    drawSphere(sh, B, glm::vec3(80, 89, 40), 11.0f, cld, true);
+    drawSphere(sh, B, glm::vec3(90, 87, 38), 8.0f, cld, true);
+    drawSphere(sh, B, glm::vec3(-90, 91, -25), 9.5f, cld, true);
+    drawSphere(sh, B, glm::vec3(-82, 89, -22), 7.5f, cld, true);
     sh.setBool("isEmissive", false);
 }
 
@@ -1336,7 +1455,7 @@ int main()
     initVehicles();
 
     // Spot light aimed at cricket stadium
-    spotLight.position = glm::vec3(-30, 55, C1Z + 8);
+    spotLight.position = glm::vec3(80, 75, C1Z + 5);
     spotLight.direction = glm::vec3(0, -1, 0);
     spotLight.cutOff = cosf(glm::radians(22.0f));
     spotLight.outerCutOff = cosf(glm::radians(32.0f));
@@ -1345,11 +1464,11 @@ int main()
         << "   3D SMART CITY ENVIRONMENT SIMULATION\n"
         << "   CSE 4208 - Computer Graphics\n"
         << "============================================================\n\n"
-        << "  CAMERA MOVEMENT:\n"
+        << "  CAMERA MOVEMENT (speed: MoveSpeed=" << camera.MoveSpeed << "):\n"
         << "    W / S        Forward / Backward\n"
         << "    A / D        Left / Right\n"
         << "    E / R        Up / Down\n\n"
-        << "  CAMERA ROTATION:\n"
+        << "  CAMERA ROTATION (speed: RotSpeed=" << camera.RotSpeed << "):\n"
         << "    X            Pitch       (Shift+X = inverse)\n"
         << "    Y            Yaw         (Shift+Y = inverse)\n"
         << "    Z            Roll        (Shift+Z = inverse)\n"
@@ -1362,6 +1481,8 @@ int main()
         << "    L            Day / Night toggle\n"
         << "    4            4-Viewport split toggle\n"
         << "    ESC          Exit\n"
+        << "============================================================\n"
+        << "  Speed code: camera.h line 35 (MoveSpeed, RotSpeed)\n"
         << "============================================================\n\n";
 
     while (!glfwWindowShouldClose(window))
@@ -1371,7 +1492,7 @@ int main()
         processInput(window);
         updateVehicles(deltaTime);
 
-        glClearColor(isNight ? 0.02f : 0.53f, isNight ? 0.02f : 0.81f, isNight ? 0.08f : 0.92f, 1);
+        glClearColor(isNight ? 0.01f : 0.42f, isNight ? 0.01f : 0.72f, isNight ? 0.06f : 0.98f, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         int fbW, fbH;
@@ -1381,28 +1502,28 @@ int main()
         if (!splitViewport)
         {
             glViewport(0, 0, fbW, fbH);
-            glm::mat4 proj = myPerspective(glm::radians(camera.Zoom), (float)fbW / fbH, 0.5f, 1500);
+            glm::mat4 proj = myPerspective(glm::radians(camera.Zoom), (float)fbW / fbH, 0.5f, 3000);
             renderScene(cubeVAO, lightSh, proj, view, 0);
         }
         else
         {
             int hW = fbW / 2, hH = fbH / 2;
-            glm::mat4 proj = myPerspective(glm::radians(camera.Zoom), (float)hW / hH, 0.5f, 1500);
+            glm::mat4 proj = myPerspective(glm::radians(camera.Zoom), (float)hW / hH, 0.5f, 3000);
             // Top-left: combined
             glViewport(0, hH, hW, hH);
             renderScene(cubeVAO, lightSh, proj, view, 0);
             // Top-right: ambient only (top-down view)
             glViewport(hW, hH, hW, hH);
             renderScene(cubeVAO, lightSh, proj,
-                glm::lookAt(glm::vec3(0, 250, 0.1f), glm::vec3(0, 0, 0), glm::vec3(0, 0, -1)), 1);
+                glm::lookAt(glm::vec3(0, 450, 0.1f), glm::vec3(0, 0, 0), glm::vec3(0, 0, -1)), 1);
             // Bottom-left: diffuse only (front view)
             glViewport(0, 0, hW, hH);
             renderScene(cubeVAO, lightSh, proj,
-                glm::lookAt(glm::vec3(0, 40, 200), glm::vec3(0, 20, 0), glm::vec3(0, 1, 0)), 2);
+                glm::lookAt(glm::vec3(0, 80, 320), glm::vec3(0, 40, 0), glm::vec3(0, 1, 0)), 2);
             // Bottom-right: directional only (isometric)
             glViewport(hW, 0, hW, hH);
             renderScene(cubeVAO, lightSh, proj,
-                glm::lookAt(glm::vec3(180, 140, 180), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0)), 3);
+                glm::lookAt(glm::vec3(260, 200, 260), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0)), 3);
         }
         glfwSwapBuffers(window);
         glfwPollEvents();
