@@ -2147,7 +2147,8 @@ void renderScene(unsigned int vao, Shader& sh, glm::mat4 proj, glm::mat4 view, i
     // Sun or moon disc and optional sun rays.
     sh.setBool("isEmissive", true);
     if (!isNight) {
-        glm::vec3 sunP = glm::vec3(120, 320, 150);
+        // Keep sun away from Burj column (~120, Z_ROW1_POS) so the disc/rays do not sit inside the tower.
+        glm::vec3 sunP = glm::vec3(-95.0f, 405.0f, 285.0f);
         g_boundTex = texSun;
         drawSphere(sh, B, sunP, 24.0f, glm::vec3(1.0f, 0.95f, 0.5f), true);
         g_boundTex = 0;
