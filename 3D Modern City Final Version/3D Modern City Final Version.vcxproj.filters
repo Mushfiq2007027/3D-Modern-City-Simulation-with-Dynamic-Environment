@@ -23,9 +23,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\bridge_highway.jpg">
-      <Filter>Source Files</Filter>
-    </Image>
     <Image Include="..\burj_facade.jpg">
       <Filter>Source Files</Filter>
     </Image>
@@ -114,6 +111,9 @@
       <Filter>Source Files</Filter>
     </Image>
     <Image Include="..\day_sky.jpg">
+      <Filter>Source Files</Filter>
+    </Image>
+    <Image Include="..\bridge_highway.jpg">
       <Filter>Source Files</Filter>
     </Image>
   </ItemGroup>

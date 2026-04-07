@@ -66,7 +66,8 @@ const float BRIDGE_SURFACE_Y = HWY_Y + 0.4f;
 const float BRIDGE_DECK_CENTER_Y = BRIDGE_SURFACE_Y - 0.5f * BRIDGE_DECK_THICK;
 const float BRIDGE_CABLE_Z = BRIDGE_DECK_HALF_Z + 2.0f;
 const float BRIDGE_LANE_Z = 14.0f * 1.5f;
-const float HWY_APPROACH_LANE_Z = 12.0f;
+// Match vehicle lane spacing (was 12f and caused Z snap at river vs bridge).
+const float HWY_APPROACH_LANE_Z = BRIDGE_LANE_Z;
 const float BRIDGE_APPROACH_TREE_Z = 30.0f * 2.0f;
 const float RIVER_BANK_TREE_Z_PUSH = (BRIDGE_DECK_HALF_Z - 22.0f) * 2.0f;
 // First city rows (|Z| was 80): shift along +/-Z so large footprints (stadium, towers) clear the bridge deck in Z.
@@ -172,9 +173,11 @@ float bridgeDeckY(float x)
     return HWY_Y;
 }
 
-static float vehicleLaneOffsetZ(float x, int lane)
+// Single lane spacing for all X: mixing BRIDGE_LANE_Z vs HWY_APPROACH_LANE_Z at |x|==RIV_HW
+// caused a ~9-unit Z snap over the river (looked like swerving around an invisible obstacle).
+static float vehicleLaneOffsetZ(float /*x*/, int lane)
 {
-    float half = (x > -RIV_HW && x < RIV_HW) ? BRIDGE_LANE_Z : HWY_APPROACH_LANE_Z;
+    const float half = BRIDGE_LANE_Z;
     return (lane == 0) ? half : -half;
 }
 
@@ -439,7 +442,7 @@ void drawTollBooth(unsigned int v, Shader& s, glm::mat4 B, glm::vec3 p)
 void drawVehicle(unsigned int v, Shader& s, glm::mat4 B,
     glm::vec3 pos, int type, int dir)
 {
-    // 0° = faces +X (dir>0), 180° = faces -X (dir<0)
+    // 0? = faces +X (dir>0), 180? = faces -X (dir<0)
     float rotY = (dir > 0) ? 0.0f : 180.0f;
     glm::mat4 vm = glm::translate(B, pos);
     // Scale: longer in Z than X or Y for a road vehicle silhouette.
@@ -1472,14 +1475,12 @@ void drawHighway(unsigned int v, Shader& s, glm::mat4 B)
         drawCube(v, s, B, glm::vec3(x, (HWY_Y - 2) * 0.5f, hwyMarkZ), glm::vec3(5.5f, HWY_Y - 2, 3.0f), pillar);
     }
 
-    // Connecting roads (ground level, along Z, under/beside highway)
+    // Connecting roads (ground level, along Z, under/beside highway). No zebra strips here:
+    // they sat near world Z=0 under the river span and read as markings on the bridge.
     float connX[] = { -170,-110,-45, 55, 120, 180 };
     for (float cx : connX) {
         drawCube(v, s, B, glm::vec3(cx, 0.08f, 36), glm::vec3(5.5f, 0.35f, 52), road);
         drawCube(v, s, B, glm::vec3(cx, 0.08f, -36), glm::vec3(5.5f, 0.35f, 52), road);
-        // Zebra crossings
-        for (int zs = -2; zs <= 2; zs++)
-            drawCube(v, s, B, glm::vec3(cx, 0.18f, zs * 1.4f), glm::vec3(5.0f, 0.08f, 0.7f), mark);
     }
 }
 
@@ -1997,7 +1998,7 @@ void renderScene(unsigned int vao, Shader& sh, glm::mat4 proj, glm::mat4 view, i
     g_boundTex = texResid;    drawApartment(vao, sh, B, glm::vec3(390, 2, Z_ROW3_POS), 55, glm::vec3(0.85f, 0.72f, 0.60f)); g_boundTex = 0;
     drawTree(vao, sh, B, glm::vec3(355, 2, Z_ROW3_POS + 25)); drawTree(vao, sh, B, glm::vec3(425, 2, Z_ROW3_POS + 25));
 
-    // City 1, negative Z bands (row1 pushed for bridge; rows 2–3 spaced by CITY_ROW_Z_GAP).
+    // City 1, negative Z bands (row1 pushed for bridge; rows 2?3 spaced by CITY_ROW_Z_GAP).
     g_boundTex = texResidBlk; drawBlock(glm::vec3(120, 1, Z_ROW1_NEG), glm::vec3(90, 2, 90), glm::vec3(0.60f, 0.56f, 0.52f)); g_boundTex = 0;
     g_boundTex = texResid;    drawApartment(vao, sh, B, glm::vec3(120, 2, Z_ROW1_NEG), 50, glm::vec3(0.65f, 0.80f, 0.78f)); g_boundTex = 0;
     drawTree(vao, sh, B, glm::vec3(155, 2, -55 - CITY_ROW1_Z_PUSH)); drawTree(vao, sh, B, glm::vec3(90, 2, -55 - CITY_ROW1_Z_PUSH));
@@ -2155,7 +2156,7 @@ void renderScene(unsigned int vao, Shader& sh, glm::mat4 proj, glm::mat4 view, i
         // Sun: radial ray quads.
         glm::vec3 rayC(1.0f, 0.92f, 0.15f);
         for (int ri = 0; ri < 8; ri++) {
-            float ang = glm::radians(ri * 45.0f + 90.0f); // 90° rotation
+            float ang = glm::radians(ri * 45.0f + 90.0f); // 90? rotation
             glm::mat4 m = glm::translate(B, sunP);
             m = myRotate(m, ang, glm::vec3(0, 0, 1));
             drawCube(vao, sh, m, glm::vec3(0, 32.0f, 0), glm::vec3(1.2f, 18.0f, 1.2f), rayC);
@@ -2421,5 +2422,4 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void framebuffer_size_callback(GLFWwindow*, int, int) {}
 void scroll_callback(GLFWwindow*, double, double y) { camera.ProcessMouseScroll((float)y); }
-
 
